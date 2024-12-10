@@ -65,7 +65,7 @@ class OneThingAIInstance:
                         method, 
                         url, 
                         headers=self.headers, 
-                        params=args, 
+                        params=args.dict() if args else None, 
                         timeout=timeout
                     )
                 else:
@@ -73,7 +73,7 @@ class OneThingAIInstance:
                         method, 
                         url, 
                         headers=self.headers, 
-                        json=args, 
+                        json=args.dict() if args else None, 
                         timeout=timeout
                     )
                 response.raise_for_status()
