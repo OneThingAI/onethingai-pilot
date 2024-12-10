@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
 from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
+from pydantic.alias_generators import to_snake
 
 # API Parameters
 class CamelCaseModel(BaseModel):
@@ -68,11 +69,9 @@ class ConsumeQuery(CamelCaseModel):
 # API Responses
 class BaseModelWithConfig(BaseModel):
     class Config:
-        alias_generator = lambda string: ''.join(
-            word.capitalize() if i else word.lower()
-            for i, word in enumerate(string.split('_'))
-        )
+        alias_generator = to_snake
         populate_by_name = True
+
 
 T = TypeVar('T')
 
@@ -85,9 +84,9 @@ class APIResponse(BaseModelWithConfig, Generic[T]):
 
 class ResourceItem(BaseModelWithConfig):
     """Model for resource details."""
-    gpuType: str
-    regionId: int
-    maxGpuNum: int
+    gpu_type: str = Field(..., alias="gpuType")
+    region_id: int = Field(..., alias="regionId")
+    max_gpu_num: int = Field(..., alias="maxGpuNum")
 
 class ResourceResponse(BaseModelWithConfig):
     """Model for resource details."""
@@ -95,37 +94,37 @@ class ResourceResponse(BaseModelWithConfig):
 
 class InstanceCreateResponse(BaseModelWithConfig):
     """Model for instance record details."""
-    appId: str # instance id in OnethinaAI platform
-    groupId: str
+    app_id: str = Field(..., alias="appId") # instance id in OnethinaAI platform
+    group_id: str = Field(..., alias="groupId")
 
 class CustomPortWithSubDomain(BaseModelWithConfig):
-    localPort: int
+    local_port: int = Field(..., alias="localPort")
     type: str  # http or tcp
-    subDomain: str
+    sub_domain: str = Field(..., alias="subDomain")
     
 class InstanceItem(BaseModelWithConfig):
     """Model for instance details."""
-    appImageId: int
-    appImageName: str
-    appImageAuthor: str
-    appImageVersion: str
-    billType: int
-    errCode: int
-    systemDiskSize: int
-    systemDiskSizeUsed: int
-    gpuType: str
-    appId: str
-    prePrice: float
-    price: float
-    regionId: int
-    status: int
-    webUIAddress: str
-    createdAt: int
-    stoppedAt: int
-    expiredAt: int
-    startedAt: int
-    runtime: int
-    customPort: list[CustomPortWithSubDomain]
+    app_image_id: int = Field(..., alias="appImageId")
+    app_image_name: str = Field(..., alias="appImageName")
+    app_image_author: str = Field(..., alias="appImageAuthor")
+    app_image_version: str = Field(..., alias="appImageVersion")
+    bill_type: int = Field(..., alias="billType")
+    err_code: int = Field(..., alias="errCode")
+    system_disk_size: int = Field(..., alias="systemDiskSize")
+    system_disk_size_used: int = Field(..., alias="systemDiskSizeUsed")
+    gpu_type: str = Field(..., alias="gpuType")
+    app_id: str = Field(..., alias="appId")
+    pre_price: float = Field(..., alias="prePrice")
+    price: float = Field(..., alias="price")
+    region_id: int = Field(..., alias="regionId")
+    status: int = Field(..., alias="status")
+    web_ui_address: str = Field(..., alias="webUIAddress")
+    created_at: int = Field(..., alias="createdAt")
+    stopped_at: int = Field(..., alias="stoppedAt")
+    expired_at: int = Field(..., alias="expiredAt")
+    started_at: int = Field(..., alias="startedAt")
+    runtime: int = Field(..., alias="runtime")
+    custom_port: list[CustomPortWithSubDomain]
 
 class InstanceResponse(BaseModelWithConfig):
     """Model for instance list response."""
@@ -134,45 +133,39 @@ class InstanceResponse(BaseModelWithConfig):
 
 class WalletDetailResponse(BaseModelWithConfig):
     """Model for wallet/account balance details."""
-    availableBalance: float  # Available balance after deducting instance reservations
-    availableVoucherCash: float  # Available voucher amount after deducting instance reservations  
-    consumeCashTotal: float  # Total consumption amount
+    available_balance: float = Field(..., alias="availableBalance") # Available balance after deducting instance reservations
+    available_voucher_cash: float = Field(..., alias="availableVoucherCash")  # Available voucher amount after deducting instance reservations  
+    consume_cash_total: float = Field(..., alias="consumeCashTotal")  # Total consumption amount
 
 class WalletConsume(BaseModelWithConfig):
     """Model for individual wallet consumption record."""
-    orderId: str
-    date: datetime
-    appId: str
-    consumCash: float
-    voucherDeductCash: float
-    actualPayCash: float
-    businessType: int
-    billType: int
-    runtime: int
-    event: str
-    totalDiscountPrice: float
+    order_id: str = Field(..., alias="orderId")
+    date: datetime = Field(..., alias="date")
+    app_id: str = Field(..., alias="appId")
+    consum_cash: float = Field(..., alias="consumCash")
+    voucher_deduct_cash: float = Field(..., alias="voucherDeductCash")
+    actual_pay_cash: float = Field(..., alias="actualPayCash")
+    business_type: int = Field(..., alias="businessType")
+    bill_type: int = Field(..., alias="billType")
+    runtime: int = Field(..., alias="runtime")
+    event: str = Field(..., alias="event")
+    total_discount_price: float = Field(..., alias="totalDiscountPrice")
 
 class WalletConsumeResponse(BaseModelWithConfig):
     """Model for wallet consumption query response."""
-    orderList: list[WalletConsume]
+    order_list: list[WalletConsume] = Field(..., alias="orderList") 
 
 class PrivateImageItem(BaseModelWithConfig):
     """Model for private image details."""
-    appImageId: str
-    imageDescription: str
-    imageName: str
-    imageStatus: int 
-    imageTotalSize: int 
-    regionId: int 
-    updatedAt: str 
-    createdAt: str 
+    app_image_id: str = Field(..., alias="appImageId")
+    image_description: str = Field(..., alias="imageDescription")
+    image_name: str = Field(..., alias="imageName")
+    image_status: int = Field(..., alias="imageStatus")
+    image_total_size: int = Field(..., alias="imageTotalSize")
+    region_id: int = Field(..., alias="regionId")
+    updated_at: str = Field(..., alias="updatedAt")
+    created_at: str = Field(..., alias="createdAt")
     
-    class Config:
-        alias_generator = lambda string: ''.join(
-            word.capitalize() if i else word.lower()
-            for i, word in enumerate(string.split('_'))
-        )
-        allow_population_by_field_name = True
 
 class PrivateImageResponse(BaseModelWithConfig):
     """Model for private image list response."""
