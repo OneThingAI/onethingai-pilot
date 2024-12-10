@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
 from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
@@ -9,6 +9,7 @@ class CamelCaseModel(BaseModel):
         # Get the original dict with by_alias=True to handle nested models
         kwargs['by_alias'] = True
         original_dict = super().dict(*args, **kwargs)
+        print(original_dict)
         
         # Convert snake_case to camelCase for all keys
         def convert_dict(d: dict) -> dict:
@@ -27,7 +28,7 @@ class CamelCaseModel(BaseModel):
         return convert_dict(original_dict)
 
 class ResourceQuery(CamelCaseModel):
-    app_image_id: int
+    app_image_id: int 
     gpu_type: str
 
 class CustomPort(CamelCaseModel):
@@ -44,7 +45,7 @@ class InstanceConfigQuery(CamelCaseModel):
     group_id: int
     custom_port: CustomPort
 
-class InstanceListQuery(CamelCaseModel):
+class InstanceQuery(CamelCaseModel):
     page: int
     page_size: int
     app_id: str 
@@ -64,31 +65,14 @@ class ConsumeQuery(CamelCaseModel):
         return v
 
 
-class PrivateImageQuery(CamelCaseModel):
-    """Model for private image details."""
-    app_image_id: str = Field(..., description="Image ID used in create v2 API")
-    image_description: str = Field(..., description="Image description")
-    image_name: str = Field(..., description="Image name")
-    image_status: int = Field(..., description="Image status: 1=Saving, 4=Success, 5=Failed")
-    image_total_size: int = Field(..., description="Image size in bytes") 
-    region_id: int = Field(..., description="Region ID where image is available")
-
-    @validator('image_status')
-    def validate_status(cls, v):
-        valid_statuses = {1, 4, 5}
-        if v not in valid_statuses:
-            raise ValueError(f'image_status must be one of {valid_statuses}')
-        return v
-
-
-
 # API Responses
 class BaseModelWithConfig(BaseModel):
     class Config:
         alias_generator = lambda string: ''.join(
-            ['_' + char.lower() if char.isupper() else char
-             for char in string]).lstrip('_')
-        allow_population_by_field_name = True
+            word.capitalize() if i else word.lower()
+            for i, word in enumerate(string.split('_'))
+        )
+        populate_by_name = True
 
 T = TypeVar('T')
 
@@ -109,7 +93,7 @@ class ResourceResponse(BaseModelWithConfig):
     """Model for resource details."""
     resource: list[ResourceItem]
 
-class InstanceResponse(BaseModelWithConfig):
+class InstanceCreateResponse(BaseModelWithConfig):
     """Model for instance record details."""
     appId: str # instance id in OnethinaAI platform
     groupId: str
@@ -119,7 +103,7 @@ class CustomPortWithSubDomain(BaseModelWithConfig):
     type: str  # http or tcp
     subDomain: str
     
-class InstanceResponse(BaseModelWithConfig):
+class InstanceItem(BaseModelWithConfig):
     """Model for instance details."""
     appImageId: int
     appImageName: str
@@ -142,6 +126,10 @@ class InstanceResponse(BaseModelWithConfig):
     startedAt: int
     runtime: int
     customPort: list[CustomPortWithSubDomain]
+
+class InstanceResponse(BaseModelWithConfig):
+    """Model for instance list response."""
+    list: list[InstanceItem]
 
 
 class WalletDetailResponse(BaseModelWithConfig):
@@ -168,15 +156,25 @@ class WalletConsumeResponse(BaseModelWithConfig):
     """Model for wallet consumption query response."""
     orderList: list[WalletConsume]
 
-class PrivateImage(BaseModelWithConfig):
+class PrivateImageItem(BaseModelWithConfig):
     """Model for private image details."""
     appImageId: str
     imageDescription: str
     imageName: str
-    imageStatus: str
-    imageTotalSize: str
-    regionId: str
+    imageStatus: int 
+    imageTotalSize: int 
+    regionId: int 
+    updatedAt: str 
+    createdAt: str 
+    
+    class Config:
+        alias_generator = lambda string: ''.join(
+            word.capitalize() if i else word.lower()
+            for i, word in enumerate(string.split('_'))
+        )
+        allow_population_by_field_name = True
 
 class PrivateImageResponse(BaseModelWithConfig):
-    data: list[PrivateImage]
+    """Model for private image list response."""
+    data: list[PrivateImageItem]
     

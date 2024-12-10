@@ -1,34 +1,15 @@
-from instances.models import (
-    InstanceType,
-    InstanceSize,
-    create_instance_config
-)
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from instances.instance_manager import OneThingAIInstance
+from instances.models import *
+instance_manager = OneThingAIInstance(api_key="97ad8bccd51ab247f7535d9c788ef949")
 
-# Create instance configuration
-config = create_instance_config(
-    name="test-instance",
-    instance_type=InstanceType.GPU,
-    size=InstanceSize.SMALL,
-    storage_size=100,
-    gpu_count=1,
-    tags={"environment": "development"}
-)
+ret = instance_manager.get_private_image_list()
 
-# Initialize instance manager
-instance_manager = OneThingAIInstance(api_key="your_api_key")
+for item in ret.data:
+    print(item, type(item))
 
-# Create instance
-response = instance_manager.create(config)
-
-if response.success:
-    instance = response.data
-    print(f"Instance created: {instance.id}")
-    
-    # Get metrics
-    metrics_response = instance_manager.get_metrics(instance.id)
-    if metrics_response.success:
-        metrics = metrics_response.data
-        print(f"CPU Usage: {metrics.cpu_usage}%")
-else:
-    print(f"Error: {response.message}") 
+ret = instance_manager.get_available_resources(ResourceQuery(app_image_id=1, gpu_type="NVIDIA-GEFORCE-RTX-4090"))
+print(ret)

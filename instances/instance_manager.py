@@ -4,10 +4,17 @@ from typing import Dict, Optional, List
 import time
 from .models import (
     ResourceQuery,
+    ConsumeQuery,
+    InstanceConfigQuery,
+    InstanceQuery,  
     PrivateImageResponse,
+    ResourceResponse,
+    InstanceCreateResponse,
     InstanceResponse,
-    InstanceListResponse,
-    InstanceMetricsResponse,    
+    WalletDetailResponse,
+    WalletConsumeResponse,
+    APIResponse,
+    PrivateImageItem,
 )
 
 class OneThingAIInstance:
@@ -34,7 +41,7 @@ class OneThingAIInstance:
     def _make_request(self, 
                      method: str, 
                      endpoint: str, 
-                     data: Optional[Dict] = None,
+                     args: Optional[Dict] = None,
                      timeout: Optional[int] = None,
                      max_retries: Optional[int] = None) -> Dict:
         """Make HTTP request to OneThingAI API with retries.
@@ -53,13 +60,22 @@ class OneThingAIInstance:
         
         while attempt < retries:
             try:
-                response = requests.request(
-                    method, 
-                    url, 
-                    headers=self.headers, 
-                    json=data.dict() if data else None, 
-                    timeout=timeout
-                )
+                if method == "GET":
+                    response = requests.request(
+                        method, 
+                        url, 
+                        headers=self.headers, 
+                        params=args, 
+                        timeout=timeout
+                    )
+                else:
+                    response = requests.request(
+                        method, 
+                        url, 
+                        headers=self.headers, 
+                        json=args, 
+                        timeout=timeout
+                    )
                 response.raise_for_status()
                 return APIResponse(**response.json())
                 
@@ -85,12 +101,13 @@ class OneThingAIInstance:
                     self.logger.error(f"API request failed: {str(e)}")
                     raise
 
-    def get_private_image_list(self, query: PrivateImageQuery) -> PrivateImageResponse :
+    def get_private_image_list(self) -> PrivateImageResponse:
         """Get list of available images."""
         try:
-            response = self._make_request("GET", "api/v1/app/private/image/list", query)
+            response = self._make_request("GET", "api/v1/app/private/image/list")
             if response.code == 0:
-                return PrivateImageResponse(**response.data)    
+                # Create PrivateImageResponse with data
+                return PrivateImageResponse(data=response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
@@ -113,23 +130,23 @@ class OneThingAIInstance:
             raise Exception(f"Failed to get available resources: {str(e)}")
 
 
-    def get_instance_list(self, query: InstanceListQuery) -> InstanceListResponse:
+    def get_instance_list(self, query: InstanceQuery) -> InstanceResponse:
         """Get list of instances."""
         try:
             response = self._make_request("GET", "api/v1/app", query)
             if response.code == 0:
-                return InstanceListResponse(**response.data)
+                return InstanceResponse(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get instance list: {str(e)}")
 
-    def create(self, instance_config: InstanceConfigQuery) -> InstanceResponse:
+    def create(self, instance_config: InstanceConfigQuery) -> InstanceCreateResponse:
         """Create a new instance with specified configuration."""
         try:
             response = self._make_request("POST", "api/v2/app", instance_config)
             if response.code == 0:
-                return InstanceResponse(**response.data)
+                return InstanceCreateResponse(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
@@ -216,7 +233,7 @@ class OneThingAIInstance:
     def get_metrics(self, 
                     instance_id: str, 
                     timeout: Optional[int] = None,
-                    max_retries: Optional[int] = None) -> InstanceMetricsResponse:
+                    max_retries: Optional[int] = None) -> None:
         """Get instance metrics."""
         # TODO: Implement this
         pass
