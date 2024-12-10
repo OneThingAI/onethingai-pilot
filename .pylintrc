@@ -1,0 +1,60 @@
+[MASTER]
+# Python code to ignore during linting
+ignore=CVS
+
+# Add any Python module names here where you want to disable all warnings
+ignore-patterns=
+
+# Use multiple processes to speed up Pylint (use "0" for auto)
+jobs=0
+
+# List of plugins to load
+load-plugins=
+
+# Allow loading modules/packages from outside the python path
+ignore-paths=
+
+[MESSAGES CONTROL]
+# Disable specific warnings
+disable=
+    C0111,  # missing-docstring
+    C0103,  # invalid-name
+    C0303,  # trailing-whitespace
+    W0311,  # bad-indentation
+    W0603,  # global-statement
+    R0903,  # too-few-public-methods
+    R0913,  # too-many-arguments
+    R0914,  # too-many-locals
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=120
+
+# Maximum number of lines in a module
+max-module-lines=1000
+
+# String used as indentation unit (2 spaces, 4 spaces, or tabs)
+indent-string='    '
+
+[BASIC]
+# Regular expression which should only match function or class names
+function-rgx=[a-z_][a-z0-9_]{2,50}$
+class-rgx=[A-Z_][a-zA-Z0-9_]+$
+
+# Good variable names
+good-names=i,j,k,ex,Run,_,fd,fp,id
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=4
+
+# Ignore imports when computing similarities
+ignore-imports=yes
+
+[TYPECHECK]
+# List of module names for which member attributes should not be checked
+ignored-modules=numpy,tensorflow,torch,cv2
+
+[MISCELLANEOUS]
+# List of note tags to take into consideration
+notes=FIXME,TODO,XXX,HACK 
