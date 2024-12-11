@@ -84,7 +84,7 @@ def delete_demo_instance(instance_manager, app_id):
 
 
 def main():
-    instance_manager = OneThingAIInstance(api_key="97ad8bccd51ab247f7535d9c788ef949")
+    instance_manager = OneThingAIInstance(api_key="your_api_key")
     # 获取私有镜像列表
     ret = instance_manager.get_private_image_list()
     # a simple demo to create a instance in region 6 
