@@ -152,34 +152,34 @@ class OneThingAIInstance:
         except Exception as e:
             raise Exception(f"Failed to create instance: {str(e)}")
 
-    def stop(self, instance_id: str) -> Dict:
+    def stop(self, app_id: str) -> Dict:
         """Stop a running instance."""
         try:
             response = self._make_request("PUT", f"api/v1/app/operate/shutdown/{instance_id}")
             if response.code == 0:
-                return response.data
+                return response
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to stop instance: {str(e)}")
 
-    def delete(self, instance_id: str) -> Dict:
+    def delete(self, app_id: str) -> Dict:
         """Delete an instance."""
         try:
-            response = self._make_request("DELETE", f"api/v1/app/{instance_id}")
+            response = self._make_request("DELETE", f"api/v1/app/{app_id}")
             if response.code == 0:
-                return response.data
+                return response
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to delete instance: {str(e)}")
 
-    def start(self, instance_id: str) -> Dict:
+    def start(self, app_id: str) -> Dict:
         """Start a stopped instance."""
         try:
-            response = self._make_request("PUT", f"api/v1/app/operate/boot/{instance_id}")
+            response = self._make_request("PUT", f"api/v1/app/operate/boot/{app_id}")
             if response.code == 0:
-                return response.data
+                return response
             else:
                 raise Exception(response.msg)
         except Exception as e:

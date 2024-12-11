@@ -5,7 +5,6 @@ from pathlib import Path
 
 # Add parent directory to Python path
 sys.path.append(str(Path(__file__).parent.parent))
-print(sys.path)
 
 from instances.instance_manager import OneThingAIInstance
 from onethingai_pilot.scaling_policy import AutoscalingPolicy

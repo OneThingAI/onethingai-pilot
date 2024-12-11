@@ -10,7 +10,6 @@ class CamelCaseModel(BaseModel):
         # Get the original dict with by_alias=True to handle nested models
         kwargs['by_alias'] = True
         original_dict = super().dict(*args, **kwargs)
-        print(original_dict)
         
         # Convert snake_case to camelCase for all keys
         def convert_dict(d: dict) -> dict:
@@ -37,20 +36,20 @@ class CustomPort(CamelCaseModel):
     type: str  # 1, tcp, 2, http
 
 class InstanceConfigQuery(CamelCaseModel):
-    app_image_id: int
+    app_image_id: str
     bill_type: int
     gpu_num: int
     region_id: int
     gpu_type: str
     duration: int
-    group_id: int
-    custom_port: CustomPort
+    group_id: str 
+    custom_port: list[CustomPort]
 
 class InstanceQuery(CamelCaseModel):
     page: int
     page_size: int
-    app_id: str 
-    group_id: str
+    app_id: Optional[str] = None
+    group_id: Optional[str] = None
 
 class ConsumeQuery(CamelCaseModel):
     """Model for consumption query parameters."""
@@ -111,7 +110,7 @@ class InstanceItem(BaseModelWithConfig):
     bill_type: int = Field(..., alias="billType")
     err_code: int = Field(..., alias="errCode")
     system_disk_size: int = Field(..., alias="systemDiskSize")
-    system_disk_size_used: int = Field(..., alias="systemDiskSizeUsed")
+    system_disk_size_used: float = Field(..., alias="systemDiskSizeUsed")
     gpu_type: str = Field(..., alias="gpuType")
     app_id: str = Field(..., alias="appId")
     pre_price: float = Field(..., alias="prePrice")
@@ -123,8 +122,8 @@ class InstanceItem(BaseModelWithConfig):
     stopped_at: int = Field(..., alias="stoppedAt")
     expired_at: int = Field(..., alias="expiredAt")
     started_at: int = Field(..., alias="startedAt")
-    runtime: int = Field(..., alias="runtime")
-    custom_port: list[CustomPortWithSubDomain]
+    runtime: float = Field(..., alias="runtime")
+    custom_port: list[CustomPortWithSubDomain] = Field(..., alias="customPort")
 
 class InstanceResponse(BaseModelWithConfig):
     """Model for instance list response."""
