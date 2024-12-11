@@ -155,7 +155,7 @@ class OneThingAIInstance:
     def stop(self, app_id: str) -> Dict:
         """Stop a running instance."""
         try:
-            response = self._make_request("PUT", f"api/v1/app/operate/shutdown/{instance_id}")
+            response = self._make_request("PUT", f"api/v1/app/operate/shutdown/{app_id}")
             if response.code == 0:
                 return response
             else:

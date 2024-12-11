@@ -19,6 +19,9 @@ dependencies = [
     "pydantic>=2.0.0",
 ]
 
+[tool.setuptools]
+packages = ["onethingai_pilot"]
+
 [project.urls]
 Homepage = "https://github.com/OnethingAI/onethingai-pilot"
 Documentation = "https://github.com/OnethingAI/onethingai-pilot#readme"

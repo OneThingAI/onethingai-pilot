@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="onethingai-pilot",
-    packages=find_packages(),
+    packages=["onethingai_pilot"],
     include_package_data=True,
     install_requires=[
         "requests>=2.26.0",

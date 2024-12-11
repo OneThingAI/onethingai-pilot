@@ -4,6 +4,27 @@ from datetime import datetime
 from pydantic import BaseModel, Field, validator
 from pydantic.alias_generators import to_snake
 
+class BillType(Enum):
+    MONTHLY_SUBSCRIPTION = 1
+    DAILY_SUBSCRIPTION = 2
+    PAY_AS_YOU_GO = 3
+
+
+class InstanceStatus(Enum):
+    DEPLOYING = 100
+    STARTING = 200
+    RUNNING = 300
+    STOPPING = 400
+    RESETTING = 500
+    CHANGING_IMAGE = 600
+    RELEASING = 700
+    STOPPED = 800
+
+class PrivateImageStatus(Enum):
+    SAVING = 1  # 私有镜像正在保存中
+    SUCCESS = 4  # 私有镜像保存成功
+    FAILED = 5  # 私有镜像保存失败
+
 # API Parameters
 class CamelCaseModel(BaseModel):
     def dict(self, *args, **kwargs) -> dict:
@@ -37,13 +58,19 @@ class CustomPort(CamelCaseModel):
 
 class InstanceConfigQuery(CamelCaseModel):
     app_image_id: str
-    bill_type: int
+    bill_type: Union[int, BillType]
     gpu_num: int
     region_id: int
     gpu_type: str
     duration: int
     group_id: str 
     custom_port: list[CustomPort]
+
+    @validator('bill_type')
+    def validate_bill_type(cls, v):
+        if isinstance(v, BillType):
+            return v.value
+        return v
 
 class InstanceQuery(CamelCaseModel):
     page: int
@@ -107,7 +134,7 @@ class InstanceItem(BaseModelWithConfig):
     app_image_name: str = Field(..., alias="appImageName")
     app_image_author: str = Field(..., alias="appImageAuthor")
     app_image_version: str = Field(..., alias="appImageVersion")
-    bill_type: int = Field(..., alias="billType")
+    bill_type: BillType = Field(..., alias="billType")
     err_code: int = Field(..., alias="errCode")
     system_disk_size: int = Field(..., alias="systemDiskSize")
     system_disk_size_used: float = Field(..., alias="systemDiskSizeUsed")
@@ -116,7 +143,7 @@ class InstanceItem(BaseModelWithConfig):
     pre_price: float = Field(..., alias="prePrice")
     price: float = Field(..., alias="price")
     region_id: int = Field(..., alias="regionId")
-    status: int = Field(..., alias="status")
+    status: InstanceStatus = Field(..., alias="status")
     web_ui_address: str = Field(..., alias="webUIAddress")
     created_at: int = Field(..., alias="createdAt")
     stopped_at: int = Field(..., alias="stoppedAt")
@@ -124,6 +151,18 @@ class InstanceItem(BaseModelWithConfig):
     started_at: int = Field(..., alias="startedAt")
     runtime: float = Field(..., alias="runtime")
     custom_port: list[CustomPortWithSubDomain] = Field(..., alias="customPort")
+
+    @validator('bill_type')
+    def validate_bill_type(cls, v):
+        if isinstance(v, int):
+            return BillType(v)
+        return v
+
+    @validator('status', pre=True)
+    def validate_status(cls, v):
+        if isinstance(v, int):
+            return InstanceStatus(v)
+        return v
 
 class InstanceResponse(BaseModelWithConfig):
     """Model for instance list response."""
@@ -159,12 +198,17 @@ class PrivateImageItem(BaseModelWithConfig):
     app_image_id: str = Field(..., alias="appImageId")
     image_description: str = Field(..., alias="imageDescription")
     image_name: str = Field(..., alias="imageName")
-    image_status: int = Field(..., alias="imageStatus")
+    image_status: PrivateImageStatus = Field(..., alias="imageStatus")
     image_total_size: int = Field(..., alias="imageTotalSize")
     region_id: int = Field(..., alias="regionId")
     updated_at: str = Field(..., alias="updatedAt")
     created_at: str = Field(..., alias="createdAt")
-    
+
+    @validator('image_status')
+    def validate_image_status(cls, v):
+        if isinstance(v, int):
+            return PrivateImageStatus(v)
+        return v
 
 class PrivateImageResponse(BaseModelWithConfig):
     """Model for private image list response."""

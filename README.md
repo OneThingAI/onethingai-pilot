@@ -17,6 +17,8 @@ pip install onethingai-pilot
 ```
 ## Quick Start
 
+see [examples/instance_example.py](examples/instance_example.py)
+
 ```python
 from instances.instance_manager import OneThingAIInstance
 from instances.models import InstanceConfigQuery, CustomPort
