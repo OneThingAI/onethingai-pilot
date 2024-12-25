@@ -11,8 +11,8 @@ def stop_demo_instance(instance_manager, app_id):
     print(app_id, " 测试停止")
     if app_id:
         while True:
-            ret = instance_manager.get_instance_list(InstanceQuery(page=1, page_size=10))
-            for item in ret.list:
+            ret = instance_manager.get_instance_list(QueryInstances(page=1, page_size=10))
+            for item in ret.app_list:
                 if item.app_id == app_id and item.status == InstanceStatus.RUNNING:
                     print("instance is running, stop it")
                     try:
@@ -37,8 +37,8 @@ def start_demo_instance(instance_manager, app_id):
     print(app_id, " 测试启动")
     if app_id:
         while True:
-            ret = instance_manager.get_instance_list(InstanceQuery(page=1, page_size=10))
-            for item in ret.list:
+            ret = instance_manager.get_instance_list(QueryInstances(page=1, page_size=10))
+            for item in ret.app_list:
                 if item.app_id == app_id and item.status == InstanceStatus.STOPPED:
                     print("instance is stopped, start it")
                     try:
@@ -62,8 +62,8 @@ def delete_demo_instance(instance_manager, app_id):
     print(app_id, " 测试删除")
     if app_id:
         while True:
-            ret = instance_manager.get_instance_list(InstanceQuery(page=1, page_size=10))
-            for item in ret.list:
+            ret = instance_manager.get_instance_list(QueryInstances(page=1, page_size=10))
+            for item in ret.app_list:
                 if item.app_id == app_id and item.status == InstanceStatus.STOPPED:
                     print("instance is stopped, delete it")
                     try:
@@ -86,13 +86,13 @@ def delete_demo_instance(instance_manager, app_id):
 def main():
     instance_manager = OneThingAIInstance(api_key="your_api_key")
     # 获取私有镜像列表
-    ret = instance_manager.get_private_image_list()
+    ret = instance_manager.get_private_image_list(QueryPrivateImage())
     # a simple demo to create a instance in region 6 
     # TODO: 区域ID 和 页面的对应关系
     created_by_this_demo = None
-    for item in ret.data:
-        if item.region_id == 6 and item.image_status == PrivateImageStatus.SUCCESS:
-            instance_config = InstanceConfigQuery(
+    for item in ret.private_image_list:
+        if item.region_id == 6 and item.app_image_status == PrivateImageStatus.SUCCESS:
+            instance_config = InstanceConfig(
                 app_image_id=item.app_image_id,  # 私有镜像ID
                 gpu_type="NVIDIA-GEFORCE-RTX-4090",  # 显卡类型
                 region_id=6,  # 区域ID
@@ -113,8 +113,8 @@ def main():
                 print("create instance failed, try next image")
     # 获取实例列表
     try:
-        ret = instance_manager.get_instance_list(InstanceQuery(page=1, page_size=10))
-        for item in ret.list:
+        ret = instance_manager.get_instance_list(QueryInstances(page=1, page_size=10))
+        for item in ret.app_list:
             print(item.app_image_id, item.app_image_name, item.bill_type, item.app_id)
     except Exception as e:
         print(e)
