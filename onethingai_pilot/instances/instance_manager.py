@@ -3,18 +3,19 @@ import requests
 from typing import Dict, Optional, List
 import time
 from .models import (
-    ResourceQuery,
-    ConsumeQuery,
-    InstanceConfigQuery,
-    InstanceQuery,  
-    PrivateImageResponse,
-    ResourceResponse,
-    InstanceCreateResponse,
-    InstanceResponse,
-    WalletDetailResponse,
-    WalletConsumeResponse,
+    QueryPrivateImage,
+    QueryPublishImage,
+    QueryResources,
+    QueryInstances,
+    InstanceConfig,
+    QueryBill,
     APIResponse,
-    PrivateImageItem,
+    PrivateImageList,
+    PublishImageList,
+    ResourceList,
+    InstanceList,
+    WalletDetail,
+    OrderList
 )
 
 class OneThingAIInstance:
@@ -101,47 +102,52 @@ class OneThingAIInstance:
                     self.logger.error(f"API request failed: {str(e)}")
                     raise
 
-    def get_private_image_list(self) -> PrivateImageResponse:
+    def get_private_image_list(self, query: QueryPrivateImage) -> PrivateImageList | None:
         """Get list of available images."""
         try:
-            response = self._make_request("GET", "api/v1/app/private/image/list")
+            response = self._make_request("GET", "api/v2/app/private/image/list", query)
             if response.code == 0:
-                # Create PrivateImageResponse with data
-                return PrivateImageResponse(data=response.data)
+                return PrivateImageList(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get private image list: {str(e)}")
 
-    def get_public_image_list(self) -> None:
+    def get_public_image_list(self, query: QueryPublishImage) -> PublishImageList | None:
         """Get list of available images."""
-        # TODO: Implement this
-        pass 
+        try:
+            response = self._make_request("GET", "api/v2/app/publish/image/list", query)
+            if response.code == 0:
+                return PublishImageList(**response.data)
+            else:
+                raise Exception(response.msg)
+        except Exception as e:
+            raise Exception(f"Failed to get public image list: {str(e)}")
 
-    def get_available_resources(self, query: ResourceQuery) -> ResourceResponse:
+    def get_available_resources(self, query: QueryResources) -> ResourceList | None:
         """Get available resources."""
         try:
-            response = self._make_request("GET", "api/v1/resources", query)
+            response = self._make_request("GET", "api/v2/resources", query)
             if response.code == 0:
-                return ResourceResponse(**response.data)
+                return ResourceList(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get available resources: {str(e)}")
 
 
-    def get_instance_list(self, query: InstanceQuery) -> InstanceResponse:
+    def get_instance_list(self, query: QueryInstances) -> InstanceList | None:
         """Get list of instances."""
         try:
-            response = self._make_request("GET", "api/v1/app", query)
+            response = self._make_request("GET", "api/v2/app", query)
             if response.code == 0:
-                return InstanceResponse(**response.data)
+                return InstanceList(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get instance list: {str(e)}")
 
-    def create(self, instance_config: InstanceConfigQuery) -> InstanceCreateResponse:
+    def create(self, instance_config: InstanceConfig) -> InstanceCreateResponse | None:
         """Create a new instance with specified configuration."""
         try:
             response = self._make_request("POST", "api/v2/app", instance_config)
@@ -185,34 +191,26 @@ class OneThingAIInstance:
         except Exception as e:
             raise Exception(f"Failed to start instance: {str(e)}")
 
-    def get_wallet_detail(self) -> WalletDetailResponse:
+    def get_wallet_detail(self) -> WalletDetail | None:
         """Get user's wallet/account balance details."""
         try:
             response = self._make_request("GET", "api/v1/account/wallet/detail")
             if response.code == 0:
-                return WalletDetailResponse(**response.data)
+                return WalletDetail(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get wallet details: {str(e)}")
 
 
-    def get_wallet_consume(self, query: ConsumeQuery) -> WalletConsumeResponse:
+    def get_order_list(self, query: QueryBill) -> OrderList | None:
         """Get user's consumption/billing records.
         
         Args:
-            query: ConsumeQuery object containing:
-                page: Page number (required)
-                page_size: Items per page, must be between 1-100 (required)
-                app_id: Optional instance ID to filter by
-                business_type: Optional transaction type filter:
-                    1=Instance usage
-                    2=Image storage
-                    3=File storage
-                    4=Instance expansion
-        
+            query: QueryBill object containing:
+
         Returns:
-            WalletConsumeResponse object containing list of consumption records
+            OrderList object containing list of consumption records
             
         Raises:
             Exception: If API request fails
@@ -220,20 +218,12 @@ class OneThingAIInstance:
         try:
             response = self._make_request(
                 "GET", 
-                "api/v1/account/wallet/consume/query",
-                params=query.dict()
+                "api/v2/account/wallet/consume/query",
+                query
             )
             if response.code == 0:
-                return WalletConsumeResponse(**response.data)
+                return OrderList(**response.data)
             else:
                 raise Exception(response.msg)
         except Exception as e:
             raise Exception(f"Failed to get consumption records: {str(e)}")
-
-    def get_metrics(self, 
-                    instance_id: str, 
-                    timeout: Optional[int] = None,
-                    max_retries: Optional[int] = None) -> None:
-        """Get instance metrics."""
-        # TODO: Implement this
-        pass

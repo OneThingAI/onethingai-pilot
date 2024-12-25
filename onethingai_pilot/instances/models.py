@@ -4,11 +4,18 @@ from datetime import datetime
 from pydantic import BaseModel, Field, validator
 from pydantic.alias_generators import to_snake
 
+
 class BillType(Enum):
     MONTHLY_SUBSCRIPTION = 1
     DAILY_SUBSCRIPTION = 2
     PAY_AS_YOU_GO = 3
 
+
+class BusinessType(Enum):
+    INSTANCE_USAGE = 1
+    IMAGE_STORAGE = 2
+    FILE_STORAGE = 3
+    INSTANCE_EXPANSION = 4
 
 class InstanceStatus(Enum):
     DEPLOYING = 100
@@ -48,23 +55,37 @@ class CamelCaseModel(BaseModel):
             
         return convert_dict(original_dict)
 
-class ResourceQuery(CamelCaseModel):
-    app_image_id: int 
-    gpu_type: str
+
+class QueryPrivateImage(CamelCaseModel):
+    region_id: Optional[int] = None
+    app_image_name: Optional[str] = None
+
+
+class QueryPublishImage(CamelCaseModel):
+    app_image_name: Optional[str] = None
+    app_image_author: Optional[str] = None
+
+
+class QueryResources(CamelCaseModel):
+    app_image_id: str 
+    gpu_type: Optional[str] = None
+    region_id: Optional[int] = None
+
 
 class CustomPort(CamelCaseModel):
     local_port: int
-    type: str  # 1, tcp, 2, http
+    type: str = "http" #http or tcp
 
-class InstanceConfigQuery(CamelCaseModel):
+
+class InstanceConfig(CamelCaseModel):
     app_image_id: str
-    bill_type: Union[int, BillType]
+    bill_type: Union[int, BillType] = BillType.PAY_AS_YOU_GO
     gpu_num: int
     region_id: int
     gpu_type: str
-    duration: int
-    group_id: str 
-    custom_port: list[CustomPort]
+    duration: Optional[int] = None
+    group_id: Optional[str] = None
+    custom_port: Optional[list[CustomPort]] = []
 
     @validator('bill_type')
     def validate_bill_type(cls, v):
@@ -72,24 +93,37 @@ class InstanceConfigQuery(CamelCaseModel):
             return v.value
         return v
 
-class InstanceQuery(CamelCaseModel):
+class QueryInstances(CamelCaseModel):
     page: int
     page_size: int
     app_id: Optional[str] = None
     group_id: Optional[str] = None
 
-class ConsumeQuery(CamelCaseModel):
+
+class QueryMetrics(CamelCaseModel):
+    start_time: int
+    end_time: int
+
+
+class QueryBill(CamelCaseModel):
     """Model for consumption query parameters."""
     page: int = Field(..., gt=0, description="Page number")
     page_size: int = Field(..., gt=0, le=100, description="Items per page, must be between 1 and 100")
     app_id: Optional[str] = Field(None, description="Instance ID")
-    business_type: Optional[int] = Field(None, description="Transaction type: 1=Instance usage, 2=Image storage, 3=File storage, 4=Instance expansion")
+    business_type: Optional[Union[int, BusinessType]] = Field(None, description="Transaction type")
 
     @validator('page_size')
     def validate_page_size(cls, v):
         if v <= 0 or v > 100:
             raise ValueError('page_size must be between 1 and 100')
         return v
+
+    @validator('business_type')
+    def validate_business_type(cls, v):
+        if isinstance(v, BusinessType):
+            return v.value
+        return v
+
 
 
 # API Responses
@@ -108,15 +142,61 @@ class APIResponse(BaseModelWithConfig, Generic[T]):
     data: Optional[T] = None
 
 
+class Pagination(BaseModelWithConfig):
+    """Model for pagination details."""
+    page: int
+    page_size: int = Field(..., alias="pageSize")
+    total: int
+    
+
+class PrivateImageItem(BaseModelWithConfig):
+    """Model for private image details."""
+    app_image_id: str = Field(..., alias="appImageId")
+    app_image_name: str = Field(..., alias="appImageName")
+    app_image_description: str = Field("", alias="appImageDescription")
+    app_image_status: PrivateImageStatus = Field(..., alias="appImageStatus")
+    app_image_total_size: float = Field(..., alias="appImageTotalSize")
+    region_id: int = Field(..., alias="regionId")
+    updated_at: int = Field(..., alias="updatedAt")
+    created_at: int = Field(..., alias="createdAt")
+
+    @validator('app_image_status')
+    def validate_app_image_status(cls, v):
+        if isinstance(v, int):
+            return PrivateImageStatus(v)
+        return v
+
+class PrivateImageList(BaseModelWithConfig):
+    """Model for private image list response."""
+    private_image_list: list[PrivateImageItem] = Field(..., alias="privateImageList")
+
+
+class PublishImageItem(BaseModelWithConfig):
+    """Model for published image details."""
+    app_image_id: str = Field(..., alias="appImageId")
+    app_image_name: str = Field(..., alias="appImageName")
+    app_image_description: str = Field(..., alias="appImageDescription")
+    app_image_author: str = Field(..., alias="appImageAuthor")
+    app_image_version: str = Field(..., alias="appImageVersion")
+    created_at: int = Field(..., alias="createdAt")
+    updated_at: int = Field(..., alias="updatedAt")
+
+class PublishImageList(BaseModelWithConfig):
+    """Model for published image list response."""
+    publish_image_list: list[PublishImageItem] = Field(..., alias="publishImageList") 
+
+
 class ResourceItem(BaseModelWithConfig):
     """Model for resource details."""
     gpu_type: str = Field(..., alias="gpuType")
     region_id: int = Field(..., alias="regionId")
     max_gpu_num: int = Field(..., alias="maxGpuNum")
 
-class ResourceResponse(BaseModelWithConfig):
-    """Model for resource details."""
-    resource: list[ResourceItem]
+
+class ResourceList(BaseModelWithConfig):
+    """Model for resource list response."""
+    resource_list: list[ResourceItem] = Field(..., alias="resourceList")
+
 
 class InstanceCreateResponse(BaseModelWithConfig):
     """Model for instance record details."""
@@ -130,27 +210,29 @@ class CustomPortWithSubDomain(BaseModelWithConfig):
     
 class InstanceItem(BaseModelWithConfig):
     """Model for instance details."""
-    app_image_id: int = Field(..., alias="appImageId")
+    app_id: str = Field(..., alias="appId")
+    app_image_id: str = Field(..., alias="appImageId")
     app_image_name: str = Field(..., alias="appImageName")
     app_image_author: str = Field(..., alias="appImageAuthor")
     app_image_version: str = Field(..., alias="appImageVersion")
     bill_type: BillType = Field(..., alias="billType")
+    created_at: int = Field(..., alias="createdAt")
+    custom_name: str = Field("", alias="customName")
+    custom_port: list[CustomPortWithSubDomain] = Field(default_factory=list, alias="customPort")
     err_code: int = Field(..., alias="errCode")
-    system_disk_size: int = Field(..., alias="systemDiskSize")
-    system_disk_size_used: float = Field(..., alias="systemDiskSizeUsed")
+    expired_at: int = Field(..., alias="expiredAt")
     gpu_type: str = Field(..., alias="gpuType")
-    app_id: str = Field(..., alias="appId")
+    group_id: str = Field(..., alias="groupId")
     pre_price: float = Field(..., alias="prePrice")
     price: float = Field(..., alias="price")
     region_id: int = Field(..., alias="regionId")
-    status: InstanceStatus = Field(..., alias="status")
-    web_ui_address: str = Field(..., alias="webUIAddress")
-    created_at: int = Field(..., alias="createdAt")
-    stopped_at: int = Field(..., alias="stoppedAt")
-    expired_at: int = Field(..., alias="expiredAt")
-    started_at: int = Field(..., alias="startedAt")
     runtime: float = Field(..., alias="runtime")
-    custom_port: list[CustomPortWithSubDomain] = Field(..., alias="customPort")
+    started_at: int = Field(..., alias="startedAt")
+    status: InstanceStatus = Field(..., alias="status")
+    stopped_at: int = Field(..., alias="stoppedAt")
+    system_disk_size: int = Field(..., alias="systemDiskSize")
+    system_disk_size_used: float = Field(..., alias="systemDiskSizeUsed")
+    web_ui_address: str = Field(..., alias="webUIAddress")
 
     @validator('bill_type')
     def validate_bill_type(cls, v):
@@ -164,53 +246,47 @@ class InstanceItem(BaseModelWithConfig):
             return InstanceStatus(v)
         return v
 
-class InstanceResponse(BaseModelWithConfig):
+
+class InstanceList(BaseModelWithConfig):
     """Model for instance list response."""
-    list: list[InstanceItem]
+    app_list: list[InstanceItem] = Field(..., alias="appList")
+    pagination: Pagination = Field(..., alias="pagination")
 
 
-class WalletDetailResponse(BaseModelWithConfig):
+class WalletDetail(BaseModelWithConfig):
     """Model for wallet/account balance details."""
     available_balance: float = Field(..., alias="availableBalance") # Available balance after deducting instance reservations
     available_voucher_cash: float = Field(..., alias="availableVoucherCash")  # Available voucher amount after deducting instance reservations  
     consume_cash_total: float = Field(..., alias="consumeCashTotal")  # Total consumption amount
 
-class WalletConsume(BaseModelWithConfig):
-    """Model for individual wallet consumption record."""
-    order_id: str = Field(..., alias="orderId")
-    date: datetime = Field(..., alias="date")
-    app_id: str = Field(..., alias="appId")
-    consum_cash: float = Field(..., alias="consumCash")
-    voucher_deduct_cash: float = Field(..., alias="voucherDeductCash")
+class OrderItem(BaseModelWithConfig):
+    """Model for individual bill/order record."""
     actual_pay_cash: float = Field(..., alias="actualPayCash")
-    business_type: int = Field(..., alias="businessType")
-    bill_type: int = Field(..., alias="billType")
+    app_id: str = Field("", alias="appId")
+    bill_type: BillType = Field(..., alias="billType")
+    business_type: BusinessType = Field(..., alias="businessType")
+    consume_cash: float = Field(..., alias="consumeCash")
+    created_at: int = Field(..., alias="createdAt")
+    event: str = Field("", alias="event")
+    order_id: str = Field(..., alias="orderId")
     runtime: int = Field(..., alias="runtime")
-    event: str = Field(..., alias="event")
     total_discount_price: float = Field(..., alias="totalDiscountPrice")
+    voucher_deduct_cash: float = Field(..., alias="voucherDeductCash")
 
-class WalletConsumeResponse(BaseModelWithConfig):
-    """Model for wallet consumption query response."""
-    order_list: list[WalletConsume] = Field(..., alias="orderList") 
-
-class PrivateImageItem(BaseModelWithConfig):
-    """Model for private image details."""
-    app_image_id: str = Field(..., alias="appImageId")
-    image_description: str = Field(..., alias="imageDescription")
-    image_name: str = Field(..., alias="imageName")
-    image_status: PrivateImageStatus = Field(..., alias="imageStatus")
-    image_total_size: int = Field(..., alias="imageTotalSize")
-    region_id: int = Field(..., alias="regionId")
-    updated_at: str = Field(..., alias="updatedAt")
-    created_at: str = Field(..., alias="createdAt")
-
-    @validator('image_status')
-    def validate_image_status(cls, v):
+    @validator('bill_type')
+    def validate_bill_type(cls, v):
         if isinstance(v, int):
-            return PrivateImageStatus(v)
+            return BillType(v)
         return v
 
-class PrivateImageResponse(BaseModelWithConfig):
-    """Model for private image list response."""
-    data: list[PrivateImageItem]
-    
+    @validator('business_type')
+    def validate_business_type(cls, v):
+        if isinstance(v, int):
+            return BusinessType(v)
+        return v
+
+
+class OrderList(BaseModelWithConfig):
+    """Model for bill/order list response."""
+    order_list: list[OrderItem] = Field(..., alias="orderList")
+    pagination: Pagination = Field(..., alias="pagination")
