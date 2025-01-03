@@ -84,33 +84,39 @@ def delete_demo_instance(instance_manager, app_id):
 
 
 def main():
-    instance_manager = OneThingAIInstance(api_key="your_api_key")
+    instance_manager = OneThingAIInstance(api_key="97ad8bccd51ab247f7535d9c788ef949")
     # 获取私有镜像列表
-    ret = instance_manager.get_private_image_list(QueryPrivateImage())
-    # a simple demo to create a instance in region 6 
-    # TODO: 区域ID 和 页面的对应关系
-    created_by_this_demo = None
+    ret = instance_manager.get_private_image_list(QueryPrivateImage(region_id=6))
+    print(ret)
+    instance_created_by_this_demo = None
     for item in ret.private_image_list:
         if item.region_id == 6 and item.app_image_status == PrivateImageStatus.SUCCESS:
-            instance_config = InstanceConfig(
-                app_image_id=item.app_image_id,  # 私有镜像ID
-                gpu_type="NVIDIA-GEFORCE-RTX-4090",  # 显卡类型
-                region_id=6,  # 区域ID
-                gpu_num=1,  # 显卡数量
-                bill_type=BillType.PAY_AS_YOU_GO,  # 计费类型 
-                duration=0, 
-                group_id="",  
-                custom_port=[CustomPort(local_port=7860, type="http")]  # 端口转发
-            )
-
-            try:
-                ret = instance_manager.create(instance_config)
-                print(ret)
-                created_by_this_demo = ret.app_id
-                break
-            except Exception as e:
-                print(e)
-                print("create instance failed, try next image")
+            ret = instance_manager.get_available_resources(QueryResources(
+                app_image_id=item.app_image_id,  # Convert to keyword argument
+                region_id=6,
+                gpu_type="NVIDIA-GEFORCE-RTX-4090"
+            ))
+            print(ret.resource_list)
+            if ret.resource_list:
+                instance_config = InstanceConfig(
+                    app_image_id=item.app_image_id,  # 私有镜像ID
+                    gpu_type="NVIDIA-GEFORCE-RTX-4090",  # 显卡类型
+                    region_id=6,  # 区域ID
+                    gpu_num=1,  # 显卡数量
+                    bill_type=BillType.PAY_AS_YOU_GO,  # 计费类型 
+                    duration=0, 
+                    group_id="",  
+                    custom_port=[CustomPort(local_port=7860, type="http")]  # 端口转发
+                )
+                print(instance_config)
+                try:
+                    ret = instance_manager.create(instance_config)
+                    print(ret.app_id, ret.group_id)
+                    instance_created_by_this_demo = ret.app_id
+                    break
+                except Exception as e:
+                    print(e)
+                    print("create instance failed, try next image")
     # 获取实例列表
     try:
         ret = instance_manager.get_instance_list(QueryInstances(page=1, page_size=10))
@@ -119,11 +125,11 @@ def main():
     except Exception as e:
         print(e)
     
-    if created_by_this_demo:
-        stop_demo_instance(instance_manager, created_by_this_demo)
-        start_demo_instance(instance_manager, created_by_this_demo)
-        stop_demo_instance(instance_manager, created_by_this_demo)
-        delete_demo_instance(instance_manager, created_by_this_demo)
+    if instance_created_by_this_demo:
+        stop_demo_instance(instance_manager, instance_created_by_this_demo)
+        start_demo_instance(instance_manager, instance_created_by_this_demo)
+        stop_demo_instance(instance_manager, instance_created_by_this_demo)
+        delete_demo_instance(instance_manager, instance_created_by_this_demo)
     else:
         print("instance is not created by this demo, exit")
 
