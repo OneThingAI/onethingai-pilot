@@ -84,7 +84,7 @@ def delete_demo_instance(instance_manager, app_id):
 
 
 def main():
-    instance_manager = OneThingAIInstance(api_key="97ad8bccd51ab247f7535d9c788ef949")
+    instance_manager = OneThingAIInstance(api_key="your_api_key")
     # 获取私有镜像列表
     ret = instance_manager.get_private_image_list(QueryPrivateImage(region_id=6))
     print(ret)
@@ -97,7 +97,7 @@ def main():
                 gpu_type="NVIDIA-GEFORCE-RTX-4090"
             ))
             print(ret.resource_list)
-            if ret.resource_list:
+            if ret.resource_list[0].max_gpu_num > 0: # 精确查找的资源返回数量大于0，则直接创建
                 instance_config = InstanceConfig(
                     app_image_id=item.app_image_id,  # 私有镜像ID
                     gpu_type="NVIDIA-GEFORCE-RTX-4090",  # 显卡类型
